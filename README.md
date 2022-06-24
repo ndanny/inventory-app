@@ -1,6 +1,14 @@
 # Inventory App
+A practical web service for warehouses to manage products and orders.
 
-## Examples
+## Features
+- Create and manage products.
+- Create, process, and store orders concurrently (handles race conditions).
+- Reject orders for out of stock products.
+- Shutdown order intake channel.
+- Load testing with an order simulator.
+
+## Example Usages
 #### Start the service
 ```
 go run server.go
