@@ -86,6 +86,7 @@ func (h *handler) OrderCreateHandler(w http.ResponseWriter, r *http.Request) {
 // ShutdownHandler closes warehouse from taking new orders
 func (h *handler) ShutdownHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Closing the warehouse from taking new orders...")
+	// sync.Once ensures that the given method is only invoked once
 	h.once.Do(func() {
 		h.wh.Close()
 	})
