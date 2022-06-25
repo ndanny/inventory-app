@@ -4,11 +4,12 @@ import (
 	"encoding/csv"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/ndanny/inventory-app/models"
 )
 
-func ImportProducts(products map[string]models.Product) error {
+func ImportProducts(products *sync.Map) error {
 	inp, err := readCsv()
 	if err != nil {
 		return err
@@ -31,7 +32,7 @@ func ImportProducts(products map[string]models.Product) error {
 		} else {
 			prod.Price = price
 		}
-		products[prod.ID] = prod
+		products.Store(prod.ID, prod)
 	}
 
 	return nil

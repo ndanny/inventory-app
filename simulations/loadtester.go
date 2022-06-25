@@ -72,7 +72,7 @@ func requestRngOrder(num int, wg *sync.WaitGroup) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("[sim-%d]: finished", num)
+	log.Printf("[sim-%02d]: finished", num)
 }
 
 // Returns an error if the request to the service is faulty
