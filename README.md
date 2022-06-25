@@ -11,7 +11,7 @@ A practical web service for warehouses to manage inventory and orders.
 ## Example Usages
 #### 🚀 Start the service
 ```
-go run server.go
+go run -race server.go
 ```
 
 #### 📦 Simulate multiple concurrent orders
