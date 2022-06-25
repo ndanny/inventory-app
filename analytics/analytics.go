@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"time"
@@ -18,7 +19,7 @@ type analyticsService struct {
 }
 
 type AnalyticsService interface {
-	GetAnalytics() models.Analytics
+	GetAnalytics(ctx context.Context) <-chan models.Analytics
 }
 
 // New returns a new instance of an AnalyticsService
@@ -38,8 +39,22 @@ func New(processed <-chan models.Order, done <-chan struct{}) AnalyticsService {
 }
 
 // GetAnalytics returns the latest analytics data for the inventory app
-func (a *analyticsService) GetAnalytics() models.Analytics {
-	return a.result.Get()
+// returns a receive-only analytics channel
+func (a *analyticsService) GetAnalytics(ctx context.Context) <-chan models.Analytics {
+	analytics := make(chan models.Analytics)
+	go func() {
+		simulateOperation()
+		select {
+		case analytics <- a.result.Get():
+			fmt.Println("Analytics data fetched")
+			return
+		case <-ctx.Done():
+			fmt.Println("Context deadline exceeded")
+			return
+		}
+	}()
+
+	return analytics
 }
 
 // run listens to incoming orders to update the overall analytics
@@ -76,9 +91,7 @@ func (a *analyticsService) reconcile() {
 // processOrder takes an order and returns an analytics event based on
 // the order completion status
 func (a *analyticsService) processOrder(order models.Order) models.Analytics {
-	// Simulate a costly operation
-	rand.Seed(time.Now().UnixNano())
-	time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
+	simulateOperation()
 
 	data := models.Analytics{}
 	if order.Status == models.OrderStatusCompleted {
@@ -89,4 +102,10 @@ func (a *analyticsService) processOrder(order models.Order) models.Analytics {
 	}
 
 	return data
+}
+
+// simulateOperation waits a random amount of time to simulate a costly operation
+func simulateOperation() {
+	rand.Seed(time.Now().UnixNano())
+	time.Sleep(time.Duration(rand.Intn(300)) * time.Millisecond)
 }

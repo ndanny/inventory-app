@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/ndanny/inventory-app/models"
@@ -95,5 +97,13 @@ func (h *handler) ShutdownHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) AnalyticsHandler(w http.ResponseWriter, r *http.Request) {
-	writeResponse(w, http.StatusOK, h.wh.GetAnalytics(), nil)
+	reqCtx := r.Context()
+	ctx, cancel := context.WithTimeout(reqCtx, 250*time.Millisecond)
+	defer cancel()
+	stats, err := h.wh.GetAnalytics(ctx)
+	if err != nil {
+		writeResponse(w, http.StatusInternalServerError, nil, err)
+		return
+	}
+	writeResponse(w, http.StatusOK, stats, nil)
 }

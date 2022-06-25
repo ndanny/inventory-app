@@ -1,6 +1,7 @@
 package warehouse
 
 import (
+	"context"
 	"fmt"
 	"math"
 
@@ -24,7 +25,7 @@ type Warehouse interface {
 	GetOrder(id string) (models.Order, error)
 	CreateOrder(item models.Item) (*models.Order, error)
 	Close()
-	GetAnalytics() models.Analytics
+	GetAnalytics(ctx context.Context) (models.Analytics, error)
 }
 
 func New() (Warehouse, error) {
@@ -90,8 +91,13 @@ func (w *warehouse) Close() {
 	close(w.done)
 }
 
-func (w *warehouse) GetAnalytics() models.Analytics {
-	return w.analytics.GetAnalytics()
+func (w *warehouse) GetAnalytics(ctx context.Context) (models.Analytics, error) {
+	select {
+	case s := <-w.analytics.GetAnalytics(ctx):
+		return s, nil
+	case <-ctx.Done():
+		return models.Analytics{}, ctx.Err()
+	}
 }
 
 func (w *warehouse) validateItem(item models.Item) error {
