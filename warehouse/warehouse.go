@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/ndanny/inventory-app/analytics"
 	"github.com/ndanny/inventory-app/db"
 	"github.com/ndanny/inventory-app/models"
 )
 
 // warehouse manages an inventory of products and orders
 type warehouse struct {
-	products *db.ProductsDB
-	orders   *db.OrdersDB
-	incoming chan models.Order
-	done     chan struct{}
+	products  *db.ProductsDB
+	orders    *db.OrdersDB
+	analytics analytics.AnalyticsService
+	incoming  chan models.Order
+	done      chan struct{}
+	processed chan models.Order
 }
 
 type Warehouse interface {
@@ -21,6 +24,7 @@ type Warehouse interface {
 	GetOrder(id string) (models.Order, error)
 	CreateOrder(item models.Item) (*models.Order, error)
 	Close()
+	GetAnalytics() models.Analytics
 }
 
 func New() (Warehouse, error) {
@@ -32,11 +36,18 @@ func New() (Warehouse, error) {
 	if err != nil {
 		return nil, err
 	}
+	incoming := make(chan models.Order)
+	done := make(chan struct{})
+	processed := make(chan models.Order, analytics.WorkerCount)
+	analytics := analytics.New(processed, done)
+
 	wh := warehouse{
-		products: p,
-		orders:   o,
-		incoming: make(chan models.Order),
-		done:     make(chan struct{}),
+		products:  p,
+		orders:    o,
+		incoming:  incoming,
+		done:      done,
+		analytics: analytics,
+		processed: processed,
 	}
 
 	// When creating a new warehouse, spin up a goroutine to continually
@@ -79,6 +90,10 @@ func (w *warehouse) Close() {
 	close(w.done)
 }
 
+func (w *warehouse) GetAnalytics() models.Analytics {
+	return w.analytics.GetAnalytics()
+}
+
 func (w *warehouse) validateItem(item models.Item) error {
 	if item.Quantity < 1 {
 		return fmt.Errorf("quantity must be at least one: got %d", item.Quantity)
@@ -96,9 +111,10 @@ func (w *warehouse) processOrders() {
 	for {
 		select {
 		case order := <-w.incoming:
-			fmt.Printf("Processing order %s...\n", order.ID)
 			w.processOrder(&order)
 			w.orders.Insert(order)
+			fmt.Printf("Processed order %s [%s]\n", order.ID, order.Status)
+			w.processed <- order
 		case <-w.done:
 			fmt.Println("Order processor shutting down...")
 			return

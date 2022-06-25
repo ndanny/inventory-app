@@ -21,6 +21,7 @@ func main() {
 	router.Methods("GET").Path("/products").Handler(http.HandlerFunc(handler.ProductsHandler))
 	router.Methods("GET").Path("/orders/{orderId}").Handler(http.HandlerFunc(handler.OrderGetHandler))
 	router.Methods("GET").Path("/shutdown").Handler(http.HandlerFunc(handler.ShutdownHandler))
+	router.Methods("GET").Path("/analytics").Handler(http.HandlerFunc(handler.AnalyticsHandler))
 	router.Methods("POST").Path("/orders/new").Handler(http.HandlerFunc(handler.OrderCreateHandler))
 
 	fmt.Println("Listening on localhost:8080...")

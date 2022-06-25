@@ -22,6 +22,7 @@ type Handler interface {
 	OrderGetHandler(w http.ResponseWriter, r *http.Request)
 	OrderCreateHandler(w http.ResponseWriter, r *http.Request)
 	ShutdownHandler(w http.ResponseWriter, r *http.Request)
+	AnalyticsHandler(w http.ResponseWriter, r *http.Request)
 }
 
 // New returns an instance of the handler object
@@ -91,4 +92,8 @@ func (h *handler) ShutdownHandler(w http.ResponseWriter, r *http.Request) {
 		h.wh.Close()
 	})
 	writeResponse(w, http.StatusOK, "The warehouse is now closed!", nil)
+}
+
+func (h *handler) AnalyticsHandler(w http.ResponseWriter, r *http.Request) {
+	writeResponse(w, http.StatusOK, h.wh.GetAnalytics(), nil)
 }

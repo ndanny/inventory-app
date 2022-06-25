@@ -31,7 +31,7 @@ func New(processed <-chan models.Order, done <-chan struct{}) AnalyticsService {
 	}
 	// Create worker pool to process multiple orders at once
 	for i := 0; i < WorkerCount; i++ {
-		go a.run()
+		go a.run(i + 1)
 	}
 	go a.reconcile()
 	return &a
@@ -43,8 +43,8 @@ func (a *analyticsService) GetAnalytics() models.Analytics {
 }
 
 // run listens to incoming orders to update the overall analytics
-func (a *analyticsService) run() {
-	fmt.Println("Gathering service analytics...")
+func (a *analyticsService) run(id int) {
+	fmt.Printf("Goroutine %d for analytics started! Listening for orders...\n", id)
 	for {
 		select {
 		case order := <-a.processed:
@@ -61,7 +61,7 @@ func (a *analyticsService) run() {
 // reconcile listens to the a.pAnalytics chan for analytics events and
 // combines the data with the latest analytics data collected
 func (a *analyticsService) reconcile() {
-	fmt.Println("Reconcile started")
+	fmt.Println("Reconcile started!")
 	for {
 		select {
 		case p := <-a.pAnalytics:
